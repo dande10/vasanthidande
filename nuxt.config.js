@@ -18,10 +18,13 @@ export default {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
+    '@/static/css/main.css',
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    // '@/plugins/particles.js'
+    { src: '@/plugins/particles', ssr: false }
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -30,14 +33,78 @@ export default {
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
+    '@nuxt/postcss8',
     '@nuxtjs/tailwindcss',
+    'nuxt-markdown',
   ],
+  markdown: {
+    markdown: {
+      collections: [
+        {
+          name: 'blog',
+          directory: 'content/posts',
+          includeSubdirectories: true,
+          routePrefix: '/blog/',
+          serverTransform(collection, { generateRoutes }) {
+            collection.forEach(({ content, data }) => {
+              data.mins = Math.round(content.split(' ').length / 250) || 1
+              data.tags = data.tags.map((tag) => {
+                return {
+                  name: tag,
+                  path: `/tags/${tag}`
+                }
+              })
+              generateRoutes(...data.tags.map((tag) => tag.path))
+            })
+
+            return collection.sort((a, b) => b.data.date - a.data.date)
+          },
+          clientTransform() {
+            return function (collection) {
+              collection.forEach((data) => {
+                data.date = new Date(data.date)
+              })
+
+              return collection
+            }
+          }
+        },
+        {
+          name: 'projects',
+          directory: 'content/projects',
+          includeSubdirectories: false,
+          routePrefix: '/projects/',
+          clientTransform() {
+            return function (collection) {
+              collection.forEach((data) => {
+                data.date = new Date(data.date)
+              })
+
+              return collection
+            }
+          }
+        }
+      ],
+
+      grayMatter: {}
+    }
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
-  ],
+      '@nuxtjs/color-mode',
+      '@nuxt/content'
+    ],
+    content: {
+      // https://content.nuxtjs.org/api/configuration
+    },
 
-  // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {
+    // Build Configuration: https://go.nuxtjs.dev/config-build
+    build: {
+      postcss: {
+        plugins: {
+          tailwindcss: {},
+          autoprefixer: {},
+        },
+      },
+    }
   }
-}
